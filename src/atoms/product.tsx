@@ -1,14 +1,16 @@
 import { atom } from "recoil";
+import { productType } from "./productList";
+import { ResObjectType } from "../App";
 
-export interface productType {
-  id: number;
-  title: string;
-  price: number;
-  description: string;
-  category: string;
-  image: string;
-}
-export const productState = atom<productType[]>({
-  key: "",
-  default: [],
+export const productState = atom<productType>({
+  key: "productStateAtom",
+  default: {
+    category: "",
+    description: "",
+    id: 0,
+    image: "",
+    price: 0,
+    title: "",
+    count: 0,
+  },
 });

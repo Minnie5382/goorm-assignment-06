@@ -1,123 +1,107 @@
-import React from "react";
 import "./App.css";
-
 import { useEffect, useState } from "react";
 import "./App.css";
 import { atom, useRecoilState } from "recoil";
-import axios from "axios";
-import { productState } from "./atoms/product";
-import { productType } from "./atoms/product";
+import axios from "./api/axios";
+import { productListState } from "./atoms/productList";
+import { productType } from "./atoms/productList";
+import List from "./components/List";
+import requests from "./api/requests";
+import styled from "styled-components";
+import { Outlet, Route, Routes } from "react-router-dom";
+import Nav from "./components/Nav";
+import Header from "./components/Header";
+import DetailPage from "./pages/DetailPage";
+import CartPage from "./pages/CartPage";
+import LoginPage from "./pages/LoginPage";
 
 function App() {
-  const [product, setProduct] = useRecoilState<productType[]>(productState);
+  const [productList, setProductList] = useRecoilState<productType[]>(productListState);
 
-  const getRandomProduct = async () => {
+  const fetchInitialProducts = async () => {
     try {
-      let productList = await axios // axios: 비동기 // await : 동기(직렬)처럼 동작하게. 기다려준다.
-        .get(`https://fakestoreapi.com/products`);
-
-      const productObjList = productList.data.map((data: productType) => {
-        return {
-          id: data.id,
-          title: data.title,
-          price: data.price,
-          description: data.description,
-          category: data.category,
-          image: data.image,
-        };
-      });
-
-      setProduct(productObjList);
+      let res = await axios.get(requests.fetchAllProducts);
+      setProductList(res.data);
     } catch (e) {
       console.error(e);
     }
   };
 
   useEffect(() => {
-    getRandomProduct();
-  }, []); // 페이지가 맨 처음 렌더링될 때 실행됨
+    fetchInitialProducts();
+  }, [productList]); // 페이지가 맨 처음 렌더링될 때 실행됨
 
-  console.log(product);
+  const Layout = () => {
+    return (
+      <div>
+        <Header />
 
+        <Nav />
+
+        <Outlet />
+      </div>
+    );
+  };
   return (
-    <div className="">
-      <header className="p-3 flex justify-between border-b-4">
-        <div>Shop</div>
-
-        <div>
-          <button className="mx-1">cart</button>
-          <button className="mx-1">mypage</button>
-          <button className="mx-1">login</button>
-        </div>
-      </header>
-      <section className="flex flex-col text-center">
-        <h2 className="text-2xl m-3">Products</h2>
-        <div className="">
-          <button className="mx-2 border-2 rounded px-9 py-2">모두</button>
-          <button className="mx-2 border-2 rounded px-9 py-2">전자기기</button>
-        </div>
-      </section>
-      <main className="p-4">
-        <div className="mb-2">Showing 20 items</div>
-        <div className="flex flex-wrap justify-evenly">
-          {product.map((entry) => {
-            return (
-              <div className="relative w-40 h-72 border flex items-center flex-col p-3">
-                <img className="h-44 w-40" src={entry.image} />
-                <div className="h-1/4 w-32 truncate">{entry.title}</div>
-                <div className="flex justify-center">
-                  <div className="flex absolute bottom-2">
-                    <div>${entry.price}</div>
-                    <div className="ml-3 border">cart</div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-          {/* <div className="border flex flex-col p-3">
-            <div>이미지</div>
-            <div>상품명</div>
-            <div className="flex justify-center">
-              <div className="border">cart</div>
-              <div>가격</div>
-            </div>
-          </div>
-          <div className="border flex flex-col p-3">
-            <div>이미지</div>
-            <div>상품명</div>
-            <div className="flex justify-center">
-              <div className="border">cart</div>
-              <div>가격</div>
-            </div>
-          </div>
-          <div className="border flex flex-col p-3">
-            <div>이미지</div>
-            <div>상품명</div>
-            <div className="flex justify-center">
-              <div className="border">cart</div>
-              <div>가격</div>
-            </div>
-          </div>
-          <div className="border flex flex-col p-3">
-            <div>이미지</div>
-            <div>상품명</div>
-            <div className="flex justify-center">
-              <div className="border">cart</div>
-              <div>가격</div>
-            </div>
-          </div>
-          <div className="border flex flex-col p-3">
-            <div>이미지</div>
-            <div>상품명</div>
-            <div className="flex justify-center">
-              <div className="border">cart</div>
-              <div>가격</div>
-            </div>
-          </div> */}
-        </div>
-      </main>
+    <div>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<List category="all" />} />
+          <Route path="/products/all" element={<List category="all" />} />
+          <Route path="/products/jewelery" element={<List category="jewelery" />} />
+          <Route path="/products/electronics" element={<List category="electronics" />} />
+          <Route path="/products/mensclothing" element={<List category="men's clothing" />} />
+          <Route path="/products/womensclothing" element={<List category="women's clothing" />} />
+          <Route path="products/:productId" element={<DetailPage />} />
+          <Route path="cart" element={<CartPage />} />
+          <Route path="login" element={<LoginPage />} />
+        </Route>
+      </Routes>
     </div>
   );
 }
 
 export default App;
+
+const Button = styled.button`
+  margin: 1px 5px;
+  height: 40px;
+  width: 200px;
+  padding: 10px 16px;
+  border: 1px solid gray;
+  border-radius: 4px;
+`;
+
+export class Product {
+  category: string;
+  id: number;
+  title: string;
+  description: string;
+  price: number;
+  rating: {};
+  image: string;
+
+  constructor(data: ResObjectType) {
+    this.category = data.category;
+    this.id = data.id;
+    this.title = data.title;
+    this.description = data.description;
+    this.price = data.price;
+    this.rating = data.rating;
+    this.image = data.image;
+  }
+}
+
+export interface ResObjectType {
+  category: string;
+  description: string;
+  id: number;
+  image: string;
+  price: number;
+  rating: { count: number; rate: number };
+  title: string;
+}
+
+export interface CategoryType {
+  category: string;
+}
